@@ -5,6 +5,7 @@ namespace Darkwind\Contract\Controllers;
 use App\Http\Controllers\Controller;
 use Darkwind\Contract\ContractOrigin;
 use Illuminate\Http\Request;
+use YExcel\Excel;
 
 /**
  * 合同管理
@@ -13,24 +14,6 @@ use Illuminate\Http\Request;
  */
 class ContractController extends Controller
 {
-    /**
-     *
-     *
-     * @Get("/index?search=keyword")
-     *
-     * @Response(200, body={
-     *     "status": "ok|error",
-     *     "message": "...",
-     *     "data": {"..."},
-     *     "errors":null,
-     *     "code":0
-     * })
-     */
-    public function index()
-    {
-        echo 1;
-    }
-
     /**
      * 合同列表
      *
@@ -222,42 +205,111 @@ class ContractController extends Controller
         return $this->ajax('ok', '修改成功', $model);
     }
 
-//    /**
-//     * 站点数据筛选导出
-//     *
-//     * @Get("/export?site_name=fadsf&yunwei_code=fadsf&site_code=fadsf&isp_name=fadsf&computer_keep_people=fadsf&site_type=fasdfsdf&service_level=fasdfsdf&site_status=fasdfsdf&FSU_manufacturer=fasdfsdf&is_install_isp_device=fasdfsdf&is_disable_responsible_site=fasdfsdf&isp_share=fasdfsdf&maintain_status=fasdfsdf&site_source=fasdfsdf&build_type=fasdfsdf")
-//     *
-//     * @Response(200, body={
-//     *     "status": "ok|error",
-//     *     "message": "...",
-//     *     "data": {"..."},
-//     *     "errors":null,
-//     *     "code":0
-//     * })
-//     */
-//    public function export(Request $request)
-//    {
-//        $query = $this->search($request);
-//        $generator = (new ExportBiz())->site($query->get());
-//        if (!$generator) {
-//            return $this->ajax('error', '导出参数错误，数据获取失败');
-//        }
-//
-//        return response()->stream(function () use ($generator) {
-//            Excel::put(
-//                'php://output',
-//                $generator(),
-//                [
-//                    'tplFile' => storage_path('app/template/site_info_export.xlsx'),
-//                    'skipRow' => 2
-//                ]
-//            );
-//        }, 200, [
-//            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-//            'Content-Disposition' => 'attachment;filename=order_export.xlsx',
-//            'Cache-Control' => 'max-age=0',
-//        ]);
-//    }
+    /**
+     * 合同数据筛选导出
+     *
+     * @Get("/export?site_name=fadsf&yunwei_code=fadsf&site_code=fadsf&isp_name=fadsf&computer_keep_people=fadsf&site_type=fasdfsdf&service_level=fasdfsdf&site_status=fasdfsdf&FSU_manufacturer=fasdfsdf&is_install_isp_device=fasdfsdf&is_disable_responsible_site=fasdfsdf&isp_share=fasdfsdf&maintain_status=fasdfsdf&site_source=fasdfsdf&build_type=fasdfsdf")
+     *
+     * @Response(200, body={
+     *     "status": "ok|error",
+     *     "message": "...",
+     *     "data": {"..."},
+     *     "errors":null,
+     *     "code":0
+     * })
+     */
+    public function export(Request $request)
+    {
+        $query = $this->search($request);
+        $data = $query->get();
+
+        $generator = function () use ($data) {
+            yield [
+                '省份', '地市', '区县', '省分公司', '地市公司', '站点编码', '站点名称', '站点性质', '建设场景', '物业编码', '物业名称', '合同编码', '合同名称', '合同类型', '合同属性', '所属业主名称（甲方）', '客商编号', '联系方式', '证件号码', '业主所属地市公司', '业主类型', '业主证件类型', '业主证件号码', '合同乙方', '合同签订日期', '合同起始日期（原始）', '合同支付（计提）起始日期', '合同终止日期', '合同录入日期', '合同总金额', '经办人', '经办部门', '合同状态', '是否代持', '站点是否删除', '最后修改时间', '房屋租赁面积（平方米）', '场地租赁面积（平方米）', '基本年租金(元/年)', '租金支付方式', '租金支付周期（月）', '租金约定首次支付日期', '租金收款账号', '租金收款户名', '所属银行（租金收款）', '租金收款银行', '租金票据类型', '我方代开票', '代开票税点（%）', '电费单价（元/度）', '电价标准', '电费支付方式', '电费支付周期（月）', '电费约定首次支付日期', '电费收款账号', '电费收款户名', '所属银行（电费收款）', '电费收款银行', '电费票据类型', '押金金额（元）'
+            ];
+            foreach ($data as $row) {
+                yield [
+                    $row->province,
+                    $row->city,
+                    $row->zone,
+                    $row->province_unit,
+                    $row->city_unit,
+                    $row->site_code . ' ',
+                    $row->site_name,
+                    $row->site_nature,
+                    $row->scene,
+                    $row->property_code . ' ',
+                    $row->property_name,
+                    $row->contract_code,
+                    $row->contract_name,
+                    $row->contract_type,
+                    $row->contract_attribute,
+                    $row->owner_name,
+                    $row->common_code . ' ',
+                    $row->mobile,
+                    $row->certificate_number . ' ',
+                    $row->owner_belong_city_unit,
+                    $row->owner_type,
+                    $row->owner_certificate_type,
+                    $row->owner_certificate_number . ' ',
+                    $row->contract_part_B,
+                    $row->contract_signed_at,
+                    $row->contract_start_at,
+                    $row->contract_pay_start_at,
+                    $row->contract_stop_at,
+                    $row->contract_record_at,
+                    $row->contract_total_money,
+                    $row->agent,
+                    $row->agent_department,
+                    $row->contract_status,
+                    $row->is_agency,
+                    $row->is_site_deleted,
+                    $row->last_updated_at,
+                    $row->house_lease_area,
+                    $row->place_lease_area,
+                    $row->base_year_rent,
+                    $row->rent_pay_type,
+                    $row->rent_pay_cycle,
+                    $row->rent_pay_first_at,
+                    $row->rent_collection_account . ' ',
+                    $row->rent_collection_username,
+                    $row->rent_belong_bank,
+                    $row->rent_belong_bank_detail,
+                    $row->rent_invoice_type,
+                    $row->is_agency_invoice,
+                    $row->agency_rate,
+                    $row->electric_charge_unit_price,
+                    $row->electric_charge_standard,
+                    $row->electric_charge_pay_method,
+                    $row->electric_charge_pay_cycle,
+                    $row->electric_charge_pay_first_at,
+                    $row->electric_charge_collection_account . ' ',
+                    $row->electric_charge_collection_username,
+                    $row->electric_charge_belong_bank,
+                    $row->electric_charge_belong_bank_detail,
+                    $row->electric_charge_invoice_type,
+                    $row->cash_pledge,
+                ];
+            }
+        };
+        if (!$generator) {
+            return $this->ajax('error', '导出参数错误，数据获取失败');
+        }
+
+        return response()->stream(function () use ($generator) {
+            Excel::put(
+                'php://output',
+                $generator(),
+                [
+                    'skipRow' => 0
+                ]
+            );
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment;filename=order_export.xlsx',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 
     private function search($request)
     {

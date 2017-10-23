@@ -1,3 +1,20 @@
+基于 laravel5.4 的合同模块 扩展包
+
+安装
+
+    composer require darkwindcc/contract
+
+注册扩展包(5.5以上版本不需要这一步)
+
+config/app.php 中的providers数组中添加：
+
+    Darkwind\Contract\ContractServiceProvider::class
+
+加载迁移和配置文件
+
+    php artisan vendor:publish
+    php artisan migrate
+    
 字段对应中文
 
             'province'=>'省份',
