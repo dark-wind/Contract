@@ -1,0 +1,27 @@
+{
+  "name": "darkwindcc/contract",
+  "description": "laravel contract module package",
+  "type": "laravel",
+  "authors": [
+    {
+      "name": "longxia123",
+      "email": "326956600@163.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.6.4",
+    "purocean/php-excel": "^1.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Darkwind\\Contract\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Darkwind\\Contract\\ContractServiceProvider"
+      ]
+    }
+  }
+}
