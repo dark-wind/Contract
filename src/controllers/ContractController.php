@@ -58,8 +58,116 @@ class ContractController extends Controller
     public function list(Request $request)
     {
         $query = $this->search($request);
+        //合同类型特殊处理
+        if ($request->contract_type) {
+            $query->where('contract_type', $request->contract_type);
+        }
+
         return $this->ajax('ok', '获取成功', $query->paginate());
     }
+
+    /**
+     * 租赁合同列表
+     *
+     * 模糊搜索：
+     *
+     *       站点编码：site_code
+     *       站点名称：site_name
+     *       物业编码：property_code
+     *       物业名称：property_name
+     *       合同编码：contract_code
+     *       合同名称：contract_name
+     *       所属业主名称（甲方）：owner_name
+     *       客商编号：common_code
+     *
+     * 精确搜索：
+     *
+     *      区县:zone
+     *      站点性质:site_nature
+     *      建设场景:scene
+     *      合同属性:contract_attribute
+     *      业主类型:owner_type
+     *      合同状态:contract_status
+     *      是否代持:is_agency
+     *      租金支付方式:rent_pay_type
+     *      租金票据类型:rent_invoice_type
+     *      是否我方代开票:is_agency_invoice
+     *      电费支付方式:electric_charge_pay_method
+     *      电费票据类型:electric_charge_invoice_type
+     *
+     *
+     * @Get("/sitelist?site_code=fasddf&site_name=fasddf&property_code=fasddf&property_name=fasddf&contract_code=fasddf&contract_name=fasddf&owner_name=fasddf&common_code=fasddf&zone=fasddf&site_nature=fasddf&scene=fasddf&contract_type=fasddf&contract_attribute=fasddf&owner_type=fasddf&contract_status=fasddf&is_agency=fasddf&rent_pay_type=fasddf&rent_invoice_type=fasddf&is_agency_invoice=fasddf&electric_charge_pay_method=fasddf&electric_charge_invoice_type=fasddf")
+     *
+     * @Response(200, body={
+     *     "status": "ok|error",
+     *     "message": "...",
+     *     "data": {"..."},
+     *     "errors":null,
+     *     "code":0
+     * })
+     */
+    public function PlaceList(Request $request)
+    {
+        //避免前端传错了，清空它
+        $request->contract_type = '';
+        $query = $this->search($request);
+        //合同类型特殊处理
+        $query->whereIn('contract_type', ['租赁', '电租一体']);
+
+        return $this->ajax('ok', '获取成功', $query->paginate());
+    }
+
+    /**
+     * 电费合同列表
+     *
+     * 模糊搜索：
+     *
+     *       站点编码：site_code
+     *       站点名称：site_name
+     *       物业编码：property_code
+     *       物业名称：property_name
+     *       合同编码：contract_code
+     *       合同名称：contract_name
+     *       所属业主名称（甲方）：owner_name
+     *       客商编号：common_code
+     *
+     * 精确搜索：
+     *
+     *      区县:zone
+     *      站点性质:site_nature
+     *      建设场景:scene
+     *      合同属性:contract_attribute
+     *      业主类型:owner_type
+     *      合同状态:contract_status
+     *      是否代持:is_agency
+     *      租金支付方式:rent_pay_type
+     *      租金票据类型:rent_invoice_type
+     *      是否我方代开票:is_agency_invoice
+     *      电费支付方式:electric_charge_pay_method
+     *      电费票据类型:electric_charge_invoice_type
+     *
+     *
+     * @Get("/sitelist?site_code=fasddf&site_name=fasddf&property_code=fasddf&property_name=fasddf&contract_code=fasddf&contract_name=fasddf&owner_name=fasddf&common_code=fasddf&zone=fasddf&site_nature=fasddf&scene=fasddf&contract_type=fasddf&contract_attribute=fasddf&owner_type=fasddf&contract_status=fasddf&is_agency=fasddf&rent_pay_type=fasddf&rent_invoice_type=fasddf&is_agency_invoice=fasddf&electric_charge_pay_method=fasddf&electric_charge_invoice_type=fasddf")
+     *
+     * @Response(200, body={
+     *     "status": "ok|error",
+     *     "message": "...",
+     *     "data": {"..."},
+     *     "errors":null,
+     *     "code":0
+     * })
+     */
+    public function electricList(Request $request)
+    {
+        //避免前端传错了，清空它
+        $request->contract_type = '';
+        $query = $this->search($request);
+        //合同类型特殊处理
+        $query->whereIn('contract_type', ['电费', '电租一体']);
+
+        return $this->ajax('ok', '获取成功', $query->paginate());
+    }
+
 
     /**
      * 合同源数据列表筛选条件
@@ -78,7 +186,7 @@ class ContractController extends Controller
     {
         $query = $this->search($request);
         $data = [];
-        $list = ['zone', 'site_nature', 'scene', 'contract_type', 'contract_attribute', 'owner_type', 'contract_status', 'is_agency', 'rent_pay_type', 'rent_invoice_type', 'is_agency_invoice', 'electric_charge_pay_method', 'electric_charge_invoice_type'];
+        $list = ['zone', 'site_nature', 'scene', 'contract_attribute', 'owner_type', 'contract_status', 'is_agency', 'rent_pay_type', 'rent_invoice_type', 'is_agency_invoice', 'electric_charge_pay_method', 'electric_charge_invoice_type'];
         foreach ($list as $item) {
             $temp = $query->distinct($item)->get()->toArray();
             $data[$item] = array_column($temp, 0);
@@ -314,6 +422,7 @@ class ContractController extends Controller
     private function search($request)
     {
         $query = ContractOrigin::query();
+
         if ($request->site_code) {
             $query->where('site_code', 'like', "%{$request->site_code}%");
         }
@@ -351,10 +460,7 @@ class ContractController extends Controller
         if ($request->scene) {
             $query->where('scene', $request->scene);
         }
-        //合同类型
-        if ($request->contract_type) {
-            $query->where('contract_type', $request->contract_type);
-        }
+
         //合同属性
         if ($request->contract_attribute) {
             $query->where('contract_attribute', $request->contract_attribute);
