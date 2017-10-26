@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Darkwind\Contract\ContractOrigin;
 use Illuminate\Http\Request;
 use YExcel\Excel;
+use App\File;
 
 /**
  * 合同管理
@@ -167,7 +168,6 @@ class ContractController extends Controller
 
         return $this->ajax('ok', '获取成功', $query->paginate());
     }
-
 
     /**
      * 合同源数据列表筛选条件
@@ -417,6 +417,109 @@ class ContractController extends Controller
             'Content-Disposition' => 'attachment;filename=order_export.xlsx',
             'Cache-Control' => 'max-age=0',
         ]);
+    }
+
+    /**
+     * 合同导入
+     *
+     *
+     * @Post("/import")
+     *
+     * @Request({
+     *     "file_id":"fasdfasf",
+     * })
+     *
+     * @Response(200, body={
+     *     "status": "ok|error",
+     *     "message": "...",
+     *     "data": {"..."},
+     *     "errors":null,
+     *     "code":0
+     * })
+     */
+    public function import(Request $request)
+    {
+        $file_type_map = [
+            //xlsx
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/wps-office.xlsx',
+            //xls
+            'application/octet-stream',
+            'application/wps-office.xls'
+        ];
+        $file = File::findOrFail($request->file_id);
+        if (!in_array($file->mime, $file_type_map)) {
+            return $this->ajax('error', "文件类型错误，请上传.xlsx或.xls类型的excel文件");
+        }
+
+        $count = (new ContractOrigin())->import($file);
+
+        return $this->ajax('ok', "成功导入{$count}条数据");
+
+    }
+
+    /**
+     * 合同乙方（合同业主列表）
+     *
+     * 合同类型必传-->contract_type
+     *
+     * 模糊搜索(search可搜索字段)：
+     *      合同编码
+     *        合同名称
+     *      所属业主名称（甲方）
+     *      联系方式
+     *      业主证件号码
+     *      站点编码
+     *        站点名称
+     *
+     * 精确搜索：
+     *      业主类型：owner_type
+     *      合同属性:contract_attribute
+     *      业主证件类型：owner_certificate_type
+     *
+     *
+     * @Get("/ownerlist?search=keyword&owner_type=afs&contract_attribute=afs&owner_certificate_type=afs")
+     *
+     * @Response(200, body={
+     *     "status": "ok|error",
+     *     "message": "...",
+     *     "data": {"..."},
+     *     "errors":null,
+     *     "code":0
+     * })
+     */
+    public function ownerList(Request $request)
+    {
+        $contract_types = ['电租一体'];
+        $contract_types[] = $request->contract_type;
+        $query = ContractOrigin::whereIn('contract_type', ['租赁', '电租一体']);
+
+        //业主类型
+        if ($request->owner_type) {
+            $query->where('owner_type', $request->owner_type);
+        }
+        //合同属性
+        if ($request->contract_attribute) {
+            $query->where('contract_attribute', $request->contract_attribute);
+        }
+        //业主证件类型
+        if ($request->owner_certificate_type) {
+            $query->where('owner_certificate_type', $request->owner_certificate_type);
+        }
+        //模糊搜索
+        $search = $request->search;
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->orWhere('contract_code', 'like', "%{$search}%")
+                    ->orWhere('contract_name', 'like', "%{$search}%")
+                    ->orWhere('owner_name', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%")
+                    ->orWhere('certificate_number', 'like', "%{$search}%")
+                    ->orWhere('site_code', 'like', "%{$search}%")
+                    ->orWhere('site_name', 'like', "%{$search}%");
+            });
+        }
+        return $this->ajax('ok', "列表获取成功", $query->paginate());
     }
 
     private function search($request)

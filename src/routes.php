@@ -19,7 +19,9 @@ $api->version('v1', [], function ($api) {
     $api->group(['middleware' => ['api.auth', 'jwt.refresh']], function ($api) {
         //合同管理
         $api->group(['middleware' => ['can.path:/contracts/*']], function ($api) {
+            Route::post('api/contracts/import', 'Darkwind\Contract\Controllers\ContractController@import');
             Route::get('api/contracts/list', 'Darkwind\Contract\Controllers\ContractController@list');
+            Route::get('api/contracts/ownerlist', 'Darkwind\Contract\Controllers\ContractController@ownerList');
             Route::get('api/contracts/placelist', 'Darkwind\Contract\Controllers\ContractController@placeList');
             Route::get('api/contracts/electriclist', 'Darkwind\Contract\Controllers\ContractController@electricList');
             Route::delete('api/contracts/deletes', 'Darkwind\Contract\Controllers\ContractController@deletes');
